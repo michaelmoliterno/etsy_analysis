@@ -26,7 +26,9 @@ transaction_listing_bags = db['transaction_listing_bags']
 
 
 transaction_bags = db['transaction_bags']
+
 top_shops = list(transaction_bags.find({},{'shop':1}).distinct('shop'))
+top_shops.reverse()
 num_shops = len(top_shops)
 print num_shops
 
