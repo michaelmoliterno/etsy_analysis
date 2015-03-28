@@ -29,7 +29,9 @@ transaction_listing_bags = db['transaction_listing_bags']
 transaction_bags = db['transaction_bags']
 
 top_shops = list(transaction_bags.find({},{'shop':1}).distinct('shop'))
-top_shops.reverse()
+top_shops.sort(reverse=True)
+
+
 num_shops = len(top_shops)
 print num_shops
 
@@ -100,4 +102,3 @@ for shop_num, shop in enumerate(top_shops):
     except:
         e = sys.exc_info()
         print e
-        print traceback.print_stack()
