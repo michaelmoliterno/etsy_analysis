@@ -7,6 +7,7 @@ from dateutil.parser import parse
 import datetime
 import logging
 import sys
+import traceback
 
 
 date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
@@ -99,3 +100,4 @@ for shop_num, shop in enumerate(top_shops):
     except:
         e = sys.exc_info()
         print e
+        print traceback.print_stack()
