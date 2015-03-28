@@ -157,7 +157,12 @@ for shop_num, shop in enumerate(shops):
                     }
 
 
-        etsy_transaction_comments.insert(review_dict)
+        try:
+            etsy_transaction_comments.insert(review_dict)
+        except:
+            print 'listing %i already in DB' % (item_id)
+
+
 
     except:
         e = sys.exc_info()[0]

@@ -96,7 +96,12 @@ for shop_num, shop in enumerate(top_shops):
                             "shop":shop
                             }
 
-                        transaction_listing_bags.insert(trans_listing_dict)
+
+                        try:
+                            transaction_listing_bags.insert(trans_listing_dict)
+
+                        except:
+                            print 'listing %i already in DB' % (trans_id)
 
 
     except:
