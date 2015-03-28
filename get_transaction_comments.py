@@ -6,17 +6,23 @@ import pymongo
 from dateutil.parser import parse
 import datetime
 import logging
-import sys
-import traceback
+import workerpool
+import urllib3
+
+opener = urllib2.build_opener()
+opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+
+NUM_SOCKETS = 4
+NUM_WORKERS = 10
+
+http = urllib3.PoolManager(maxsize=NUM_SOCKETS)
+workers = workerpool.WorkerPool(size=NUM_WORKERS)
 
 date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
 mongo_log_dir = '/var/log/etsy/'
 LOG_FILENAME = '%sget_transaction_comments/%s.out' % (mongo_log_dir,date)
 logging.basicConfig(filename=LOG_FILENAME, # log to this file
                     format='%(asctime)s %(message)s') # include timestamp
-
-opener = urllib2.build_opener()
-opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 
 # Set up the db connections
 try:
@@ -32,14 +38,18 @@ except:
 
 
 shops = etsy_transaction_comments.distinct('shop')
+shops.sort(reverse=True)
+
 num_shops = len(shops)
+
+URL_LIST = ["https://www.etsy.com/shop/%s/reviews"%(shop) for shop in shops]
 
 print num_shops, 'shops to crawl for comments. STARTING NOW!'
 
 for shop_num, shop in enumerate(shops):
 
     shop_url = "https://www.etsy.com/shop/" + shop + "/reviews"
-    print "processing shop #%s of %i (%s)", (shop_num,num_shops,shop_url)
+    print "processing shop #%s of %i (%s)" % (shop_num,num_shops,shop_url)
 
     try:
 
@@ -63,7 +73,6 @@ for shop_num, shop in enumerate(shops):
         else:
             num_review_pages = -1
             print "no review pages for shop %s" % (shop)
-
 
         if num_review_pages > 0:
 
@@ -136,23 +145,20 @@ for shop_num, shop in enumerate(shops):
                                                 "reviewer":reviewer,
                                                 "shop":shop
                                                 }
-
+                                try:
+                                    etsy_transaction_comments.insert(review_dict)
+                                except:
+                                    print 'listing %s already in etsy_transaction_comments' % (item_id)
+                                    continue
 
         else:
-              review_dict = {
+            review_dict = {
                     "item_title":'NO EXISTING BUYER COMMENTS',
                     "date": date_time,
                     "stars":-1,
                     "shop":shop
                     }
-
-
-        try:
             etsy_transaction_comments.insert(review_dict)
-        except:
-            print 'listing %s already in etsy_transaction_comments' % (item_id)
-
-
 
     except:
         logging.exception('')
