@@ -7,7 +7,7 @@ from dateutil.parser import parse
 import datetime
 import logging
 import sys
-
+import traceback
 
 date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
 mongo_log_dir = '/var/log/etsy/'
@@ -15,62 +15,55 @@ LOG_FILENAME = '%sget_transaction_comments/%s.out' % (mongo_log_dir,date)
 logging.basicConfig(filename=LOG_FILENAME, # log to this file
                     format='%(asctime)s %(message)s') # include timestamp
 
-
 opener = urllib2.build_opener()
 opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 
+# Set up the db connections
+try:
+    c = pymongo.MongoClient("104.236.210.32")
+    db = c['etsy_db']
+    etsy_shops = db['etsy_shops']
+    etsy_transaction_comments = db['etsy_transaction_comments']
+    etsy_transaction_comments_titles = db['etsy_transaction_comments_title_search']
+    shops_inventory_db = db['etsy_shops_inventories_master']
+except:
+    print 'cannot connect to db'
+    logging.exception('')
 
-c = pymongo.MongoClient("104.236.210.32")
-db = c['etsy_db']
-
-etsy_shops = db['etsy_shops']
-etsy_transaction_comments = db['etsy_transaction_comments']
-etsy_transaction_comments_titles = db['etsy_transaction_comments_title_search']
-shops_inventory_db = db['etsy_shops_inventories_master']
 
 shops = etsy_transaction_comments.distinct('shop')
+num_shops = len(shops)
 
-# for shop in etsy_shops.find():
-#     shops.append(shop['_id'])
-#
-# shops_in_collection = []
-#
-#
-# for i, shop in enumerate(etsy_transaction_comments.distinct('shop')):
-#     shops_in_collection.append(shop)
-#
-# shops_not_in_collection = list(set(shops) - set(shops_in_collection))
-
-
-errors = []
-no_reviews = []
-
-print len(shops), 'to process. STARTING NOW!'
+print num_shops, 'shops to crawl for comments. STARTING NOW!'
 
 for shop_num, shop in enumerate(shops):
 
     shop_url = "https://www.etsy.com/shop/" + shop + "/reviews"
-    print 'processing shop #:', shop_num
-    print shop_url
-
+    print "processing shop #%s of %i (%s)", (shop_num,num_shops,shop_url)
 
     try:
-        page = opener.open(shop_url)
-        soup = BeautifulSoup(page)
+
+        try:
+            page = opener.open(shop_url)
+            soup = BeautifulSoup(page)
+        except:
+            continue
 
         print 'processing: %s ' % (shop_url)
 
         pages = soup.find(class_='pages')
 
+        if pages is not None:
+            # this gets the total number of pages of reviews for a seller
+            for i, link in enumerate(pages):
+                if i == len(pages) -2:
+                    num_review_pages = int(link.find('a').text)
 
-        # this gets the total number of pages of reviews for a seller
-        for i, link in enumerate(pages):
-            if i == len(pages) -2:
-                num_review_pages = int(link.find('a').text)
+            print "%i review pages for shop %s" % (num_review_pages,shop)
+        else:
+            num_review_pages = -1
+            print "no review pages for shop %s" % (shop)
 
-        print num_review_pages
-
-        print "%i review pages for shop %s" % (num_review_pages,shop)
 
         if num_review_pages > 0:
 
@@ -100,7 +93,6 @@ for shop_num, shop in enumerate(shops):
                     except:
                         date_time = None
 
-
                     review_infos = review.findAll('li')
 
                     for review_items, review_info in enumerate(review_infos):
@@ -119,40 +111,38 @@ for shop_num, shop in enumerate(shops):
                             try:
                                 title = review_info.find(class_='transaction-title').text.strip()
                             except:
-                                title = 'no_title'
+                                title = 'no_item_title'
 
 
                             try:
                                 stars =  int(review_info.find(class_='stars ').findChild()['value'])
                             except:
-                                stars = -1
-
+                                stars = 0
 
                             try:
                                 review_text = review.find(class_='review').text.strip()
                             except:
                                 review_text = ''
 
-                            review_dict = {
-                                            "_id":item_id,
-                                            "item_title":title,
-                                            "date": date_time,
-                                            "stars":stars,
-                                            "image_url":image_url,
-                                            "review_text":review_text,
-                                            "reviewer":reviewer,
-                                            "shop":shop
-                                            }
+                            if item_id > 0:
+
+                                review_dict = {
+                                                "_id":item_id,
+                                                "item_title":title,
+                                                "date": date_time,
+                                                "stars":stars,
+                                                "image_url":image_url,
+                                                "review_text":review_text,
+                                                "reviewer":reviewer,
+                                                "shop":shop
+                                                }
 
 
         else:
               review_dict = {
-                    "item_title":'NONE',
+                    "item_title":'NO EXISTING BUYER COMMENTS',
                     "date": date_time,
                     "stars":-1,
-                    "image_url":'NONE',
-                    "review_text":'NONE',
-                    "reviewer":'NONE',
                     "shop":shop
                     }
 
@@ -160,11 +150,9 @@ for shop_num, shop in enumerate(shops):
         try:
             etsy_transaction_comments.insert(review_dict)
         except:
-            print 'listing %s already in DB' % (item_id)
+            print 'listing %s already in etsy_transaction_comments' % (item_id)
 
 
 
     except:
-        e = sys.exc_info()[0]
-        print e
-        errors.append(shop_url)
+        logging.exception('')
