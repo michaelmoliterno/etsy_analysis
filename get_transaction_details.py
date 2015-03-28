@@ -101,7 +101,7 @@ for shop_num, shop in enumerate(top_shops):
                             transaction_listing_bags.insert(trans_listing_dict)
 
                         except:
-                            print 'listing %i already in DB' % (trans_id)
+                            print 'listing %s already in DB' % (trans_id)
 
 
     except:
