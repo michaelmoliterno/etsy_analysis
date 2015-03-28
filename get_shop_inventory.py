@@ -35,7 +35,10 @@ def get_shop_inventories():
     shops_inventory_db = db['etsy_shops_inventories_master']
     shops_inventories_titles = db['etsy_shops_inventories_master_title_search']
 
-    shops = shops_inventory_db.distinct('shop_name_text')
+    #shops = shops_inventory_db.distinct('shop_name_text')
+
+    transaction_bags = db['transaction_bags']
+    shops = list(transaction_bags.find({},{'shop':1}).distinct('shop'))
 
     # for shop in section_shops_db.find():
     #     shops.append(shop['_id'])

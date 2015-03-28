@@ -6,7 +6,7 @@ import pymongo
 from dateutil.parser import parse
 import datetime
 import logging
-
+import sys
 
 
 date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
@@ -14,7 +14,6 @@ mongo_log_dir = '/var/log/etsy/'
 LOG_FILENAME = '%sget_transaction_comments/%s.out' % (mongo_log_dir,date)
 logging.basicConfig(filename=LOG_FILENAME, # log to this file
                     format='%(asctime)s %(message)s') # include timestamp
-
 
 
 opener = urllib2.build_opener()
@@ -29,7 +28,7 @@ etsy_transaction_comments = db['etsy_transaction_comments']
 etsy_transaction_comments_titles = db['etsy_transaction_comments_title_search']
 shops_inventory_db = db['etsy_shops_inventories_master']
 
-shops = shops_inventory_db.distinct('shop_name_text')
+shops = etsy_transaction_comments.distinct('shop')
 
 # for shop in etsy_shops.find():
 #     shops.append(shop['_id'])
@@ -46,10 +45,12 @@ shops = shops_inventory_db.distinct('shop_name_text')
 errors = []
 no_reviews = []
 
+print len(shops), 'to process. STARTING NOW!'
 
 for shop_num, shop in enumerate(shops):
 
     shop_url = "https://www.etsy.com/shop/" + shop + "/reviews"
+    print 'processing shop #:', shop_num
     print shop_url
 
 
@@ -69,16 +70,11 @@ for shop_num, shop in enumerate(shops):
 
         print num_review_pages
 
-
-
         print "%i review pages for shop %s" % (num_review_pages,shop)
-
-
 
         if num_review_pages > 0:
 
             shop_review_base_url = shop_url + "?page="
-
 
             # for each review page (a seller can have many)
             for review_page in range(num_review_pages):
@@ -124,7 +120,7 @@ for shop_num, shop in enumerate(shops):
                                 title = review_info.find(class_='transaction-title').text.strip()
                             except:
                                 title = 'no_title'
-                            #print title
+
 
                             try:
                                 stars =  int(review_info.find(class_='stars ').findChild()['value'])
@@ -148,15 +144,6 @@ for shop_num, shop in enumerate(shops):
                                             "shop":shop
                                             }
 
-                            title_review_dict = {
-                                "_id":item_id,
-                                "item_title":title
-                            }
-
-                            etsy_transaction_comments_titles.insert(title_review_dict)
-
-
-
 
         else:
               review_dict = {
@@ -173,4 +160,6 @@ for shop_num, shop in enumerate(shops):
         etsy_transaction_comments.insert(review_dict)
 
     except:
+        e = sys.exc_info()[0]
+        print e
         errors.append(shop_url)
