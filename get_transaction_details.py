@@ -30,7 +30,7 @@ num_shops = len(top_shops)
 
 transaction_listing_bags = db['transaction_listing_bags']
 
-transaction_listing_bags=reversed(top_shops)
+top_shops = top_shops.reverse()
 
 for shop_num, shop in enumerate(top_shops):
     shop_url = 'https://www.etsy.com/shop/%s/sold' % (shop)
