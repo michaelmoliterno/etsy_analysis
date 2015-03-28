@@ -22,15 +22,15 @@ opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 
 c = pymongo.MongoClient("104.236.210.32")
 db = c['etsy_db']
+transaction_listing_bags = db['transaction_listing_bags']
+
 
 transaction_bags = db['transaction_bags']
 top_shops = list(transaction_bags.find({},{'shop':1}).distinct('shop'))
 num_shops = len(top_shops)
+print num_shops
 
-
-transaction_listing_bags = db['transaction_listing_bags']
-
-top_shops = top_shops.reverse()
+#top_shops = top_shops.reverse()
 
 for shop_num, shop in enumerate(top_shops):
     shop_url = 'https://www.etsy.com/shop/%s/sold' % (shop)
