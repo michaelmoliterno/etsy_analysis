@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../favicon.ico">
+
+    <title>Dashboard Template for Bootstrap</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="/static/dashboard.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Etsy Market Profiler</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+         <!-- <ul class="nav navbar-nav navbar-right">
+            -<li><a href="#">Dashboard</a></li>             
+	    <li><a href="#">Settings</a></li>
+            <li><a href="#">Profile</a></li>
+            <li><a href="#">Help</a></li> 
+          </ul> -->
+          <form class="navbar-form navbar-left">
+            <input type="text" class="form-control" placeholder="{{query}} Bag">
+          </form>
+	  
+	  <div>
+	    </div>
+
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+          <ul class="nav nav-sidebar">
+            <li class="active"><a href="#">Market Overview <span class="sr-only">(current)</span></a></li>
+<!--        </ul>
+           <ul class="nav nav-sidebar">
+            <li><a href="">Nav item</a></li>
+            <li><a href="">Nav item again</a></li>
+            <li><a href="">One more nav</a></li>
+            <li><a href="">Another nav item</a></li>
+            <li><a href="">More navigation</a></li>
+          </ul>
+          <ul class="nav nav-sidebar">
+            <li><a href="">Nav item again</a></li>
+            <li><a href="">One more nav</a></li>
+            <li><a href="">Another nav item</a></li>
+          </ul> -->
+        </div>
+
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+	  <h1 class="page-header">Etsy Market Profile for <i>{{query}} bag</i></h1>  
+	  <p>
+	    Etsy Market Profiler is using current data from Etsy.com  to generate useful insights into the current {{query}} bag market:
+	    <ul>
+	    <li>{{bag_inventory_count}} current listings
+	    <li>{{bag_transactions_count}} historical sales
+	    <li>{{bag_comments_count}} user comments
+	    </ul>
+	  </p>
+	  
+        
+	    <h2 class="sub-header">Current Market Price Distribution for {{query}} bags</h2>
+
+	  
+	 
+	    <div class="row placeholders">
+
+            <div class="col-xs-8 col-sm-12">
+	       
+	      <a href="https://plot.ly/~mmoliterno/{{plot_num}}/" target="_blank" style="display: block; text-align: center;">
+	      <img src="https://plot.ly/~mmoliterno/{{plot_num}}.png"  
+		     class="img-responsive" style="max-width: 100%"  onerror="this.onerror=null;this.src='https://plot.ly/404.png';" />
+	      </a>	
+	      <script data-plotly="mmoliterno:{{plot_num}}" src="https://plot.ly/embed.js" async></script>
+           
+	     <!--
+	     <iframe width="640" height="480" frameborder="0" seamless="seamless" scrolling="no" src="https://plot.ly/~mmoliterno/{{plot_num}}.embed?width=640&height=480" >
+	     </iframe>
+	     -->
+	     
+ </div>
+
+	    </div>
+
+
+
+	      <h2 class="sub-header">Analysis of Reviews for {{query}} bags</h2>
+	    <div class="row placeholders">
+
+            <div class="col-xs-8 col-sm-12 placeholder">
+
+	      <table class="table table-hover" >  
+	      {% for sentiment in comments.cluster_summary[1].sentiments %}
+	   
+		<thead>
+		  <th colspan="1">
+		    {% if sentiment.sentiment == "pos" %}
+		    <h4 class="text-center">Positive (4-5 star) Reviews: {{sentiment.sentiment_count}} total reviews</h4>
+		    {% else %}
+		    <h4 class="text-center">Negative (1-3 star) Reviews: {{sentiment.sentiment_count}} total reviews</h4>
+		    {% endif %}
+		  </th>
+		  <th colspan="1">
+		    <h4 class="text-center">Similar reviews</h4>	     
+		  </th>
+		</thead>
+	      
+		<tbody>
+		  {% for cluster in sentiment.clusters %} 
+		  <tr data-toggle="collapse" data-target="#accordion{{sentiment.sentiment}}{{loop.index}}" 
+		      class="clickable">
+		    <td colspan ="1">
+		      <p class="text-left">{{cluster.center_sentence_text}}</p>
+		    </td>
+		    <td colspan = "1">
+		      {{cluster.cluster_sentence_count}}
+		    </td>
+		  </tr>
+
+		  <tr>
+		    <td colspan="2">
+		      <div class="collapse" id="accordion{{sentiment.sentiment}}{{loop.index}}">
+			{% for comment in cluster.close_sentence_text %}
+			    <p class="text-left">{{comment}}</p><br/>
+			{% endfor  %}
+		      </div>
+		    </td>
+		  </tr>
+		  {% endfor %}
+		</tbody>
+	    
+	      {% endfor %}
+	    
+		  </table>	
+	    </div>
+	    </div>
+
+   
+
+          <div class="table-responsive">
+      <h2 class="sub-header">Top Shops for {{query}} bag sales (all time)</h2>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Shop</th>
+                  <th>Sales (all time)</th>
+		  <th></th>
+		  <th>Top Sellers</th>
+		  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+		{% for shop in top_stores %}
+		<tr>
+                  <td><a href="https://www.etsy.com/shop/{{shop._id}}">{{shop._id.shop}}</a></td>
+                  <td>{{shop.sales_count}}</td>
+		  <th><img src="{{shop.src[0]}}" class="img-responsive"></th>
+                  <th><img src="{{shop.src[1]}}" class="img-responsive"></th>
+                  <th><img src="{{shop.src[2]}}" class="img-responsive"></th>
+                </tr>
+		{% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+
+
+
+          <div class="table-responsive">
+
+          <h2 class="sub-header">Top selling {{query}} bags (all time)</h2>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Sales (all time)</th>
+		  <th>Image</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in top_items %}
+                <tr>
+		  <td><a href="https://www.etsy.com/listing/{{item._id.listing_id}}">{{item.title[0]}} </a></td>
+                  <td>{{item.sales_count}}</td>
+		  <td><img src="{{item.src[0]}}" class="img-responsive" alt="etsy_listing_{{item._id.listing_id}}"></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+        <!-- Bootstrap core JavaScript
+
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+  </body>
+</html>
+
